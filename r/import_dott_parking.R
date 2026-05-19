@@ -20,13 +20,14 @@ parking_merge <- inner_join(parking_dott %>% st_drop_geometry(), parking_pmt %>%
 parking_dott_merge <- parking_dott %>% filter(park_id %in% parking_merge$park_id) %>% arrange(park_id)
 parking_pmt_merge <- parking_pmt %>% filter(park_id %in% parking_merge$park_id) %>% arrange(park_id)
 #parking_merge <- bind_cols(parking_dott_merge, parking_pmt_merge)
-parking_merge
+# parking_merge
 
 #parking_merge <- parking_merge %>% 
-lines <- st_union(parking_dott_merge$geometry, parking_pmt_merge$geometry, by_feature = TRUE) %>% st_cast("LINESTRING")
-parking_merge <- bind_cols(parking_merge, lines) %>% st_as_sf() %>% 
-  mutate( distance = st_length(.) %>% as.numeric() %>% format(scientific = FALSE)) %>% 
-  mutate( distance = round(as.numeric(distance), 2))
+#lines <- st_union(parking_dott_merge$geometry, parking_pmt_merge$geometry, by_feature = TRUE) %>% st_cast("LINESTRING") # line direction
+# lines <- st_union(parking_pmt_merge$geometry, parking_dott_merge$geometry, by_feature = TRUE) %>% st_cast("LINESTRING") #line direction
+# parking_merge <- bind_cols(parking_merge, lines) %>% st_as_sf() %>% 
+#   mutate( distance = st_length(.) %>% as.numeric() %>% format(scientific = FALSE)) %>% 
+#   mutate( distance = round(as.numeric(distance), 2))
 
 
 #warning if any park_ids don't match
@@ -38,7 +39,7 @@ parking_merge <- bind_cols(parking_merge, lines) %>% st_as_sf() %>%
 
 
 ### method 2 ###
-parking_merge <- bind_rows(parking_dott, parking_pmt)
+parking_merge <- bind_rows(parking_pmt, parking_dott)
 parking_merge <- parking_merge %>%
   arrange(park_id) %>%
   group_by(park_id) %>%
@@ -60,39 +61,39 @@ palette <- bright_fun(6)
 
 
 
-leaflet() %>% 
-  addProviderTiles("CartoDB.Positron") %>%
-  addCircleMarkers(data = parking_pmt_merge %>% st_transform(4326), 
-                   color = palette[1], 
-                   opacity = 0.5,
-                   weight = 2,
-                   fillColor = palette[1],
-                   fillOpacity = 0.4,
-                   radius = 2.5,
-                   popup = paste0("<b>pmt</b> <br/>", parking_pmt_merge$park_id),
-                  # label = ~park_id,
-                 #  labelOptions = labelOptions(noHide = TRUE, direction = "bottom", textOnly = TRUE, textsize = 7),
-                   group = "pmt"
-                   ) %>%
-  addCircleMarkers(data = parking_dott_merge %>% st_transform(4326), 
-                   color = palette[2], 
-                   opacity = 0.5,
-                   weight = 2,
-                   fillColor = palette[2],
-                   fillOpacity = 0,
-                   radius = 4,
-                   popup = paste0("<b>dott</b> <br/>", parking_dott_merge$park_id),
-                   group = "dott"
-                   ) %>%
-  addPolylines(data = parking_merge %>% st_transform(4326), 
-               weight = 3,
-               opacity = 0.4,
-               color = palette[4], 
-               popup = paste0("<b>park_id: </b> ", parking_merge$park_id,"<br/> distance: ",round(parking_merge$distance,0),"m"), 
-               group = "difference") %>% 
-  addLayersControl(overlayGroups = c("pmt", "dott", "difference")) %>% 
-  addLegend(position = "bottomright", colors = palette[c(1,2,4)], labels = c("pmt", "dott", "difference"))
-
+# leaflet() %>% 
+#   addProviderTiles("CartoDB.Positron") %>%
+#   addCircleMarkers(data = parking_pmt_merge %>% st_transform(4326), 
+#                    color = palette[1], 
+#                    opacity = 0.5,
+#                    weight = 2,
+#                    fillColor = palette[1],
+#                    fillOpacity = 0.4,
+#                    radius = 2.5,
+#                    popup = paste0("<b>pmt</b> <br/>", parking_pmt_merge$park_id),
+#                   # label = ~park_id,
+#                  #  labelOptions = labelOptions(noHide = TRUE, direction = "bottom", textOnly = TRUE, textsize = 7),
+#                    group = "pmt"
+#                    ) %>%
+#   addCircleMarkers(data = parking_dott_merge %>% st_transform(4326), 
+#                    color = palette[2], 
+#                    opacity = 0.5,
+#                    weight = 2,
+#                    fillColor = palette[2],
+#                    fillOpacity = 0,
+#                    radius = 4,
+#                    popup = paste0("<b>dott</b> <br/>", parking_dott_merge$park_id),
+#                    group = "dott"
+#                    ) %>%
+#   addPolylines(data = parking_merge %>% st_transform(4326), 
+#                weight = 3,
+#                opacity = 0.4,
+#                color = palette[4], 
+#                popup = paste0("<b>park_id: </b> ", parking_merge$park_id,"<br/> distance: ",round(parking_merge$distance,0),"m"), 
+#                group = "difference") %>% 
+#   addLayersControl(overlayGroups = c("pmt", "dott", "difference")) %>% 
+#   addLegend(position = "bottomright", colors = palette[c(1,2,4)], labels = c("pmt", "dott", "difference"))
+# 
 
 
 
@@ -103,10 +104,10 @@ leaflet() %>%
 map <- leaflet() %>% 
   addProviderTiles("CartoDB.Positron") %>%
   addCircleMarkers(data = parking_pmt_merge %>% st_transform(4326), 
-                   color = palette[1], 
+                   color = palette[5], 
                    opacity = 0.5,
                    weight = 2,
-                   fillColor = palette[1],
+                   fillColor = palette[5],
                    fillOpacity = 0.4,
                    radius = 2.5,
                    popup = paste0("<b>pmt</b> <br/>", parking_pmt_merge$park_id),
@@ -129,13 +130,15 @@ map <- leaflet() %>%
 
 for(i in 1:length(parking_merge$park_id)){
   
-  map <- map %>% addPolylines(data = parking_merge[i,] %>% st_transform(4326), 
+  map <- map %>% leaflet.extras2::addArrowhead(data = parking_merge[i,] %>% st_transform(4326), 
                weight = 3,
                opacity = 0.4,
-               color = palette[4], 
+               color = palette[6], 
                popup = paste0("<b>park_id: </b> ", parking_merge$park_id[i],"<br/> distance: ",round(parking_merge$distance[i],0),"m"), 
                group = parking_merge$park_id[i])
 }
 
 map %>%
-  addLayersControl(overlayGroups = parking_merge$park_id, options = layersControlOptions(collapsed = FALSE))
+  addLayersControl(overlayGroups = c(parking_merge$park_id, "pmt","dott"), options = layersControlOptions(collapsed = FALSE)) %>% 
+  hideGroup(parking_merge$park_id) %>% 
+  addLegend(position = "bottomleft", colors = palette[c(5,2,6)], labels = c("pmt", "dott", "difference"))
